@@ -6,6 +6,8 @@
 
 // void prosedur
 //Master To Slave
+#include <kinematic_RS.h>
+
 #define Master Serial3
 // Motor DC Pin Out
 #define MRF 5       // Motor Right Front Direction
@@ -198,22 +200,22 @@ float yRight,
 unsigned long endTimeMillis,
               startTimeMillis,
               stopTimeMillis,
-              loopTimerCheck,
               loopTimer,
+              loopTimerCheck,
               endEncoderMillis,
               startEncoderMillis,
               encoderTimer;
 
 int radiusIcc,
-    xPosition,
-    lastXPosition,
-    yPosition,
-    lastYPosition,
-    thetaPosition,
-    lastThetaPosition,
-    xPositionCm,
-    yPositionCm,
-    thetaPositionDegree;
+      xPosition,
+      lastXPosition,
+      yPosition,
+      lastYPosition,
+      thetaPosition,
+      lastThetaPosition,
+      xPositionCm,
+      yPositionCm,
+      thetaPositionDegree;
 
 // Variable Kinematic
 float // MR,
@@ -654,27 +656,35 @@ void encoderMode(){
 
 void checkEncoderTimer(){
   endEncoderMillis = millis();
-  encoderTimer = endEncoderMillis - startEncoderMillis;
+  encoderTimer = (endEncoderMillis - startEncoderMillis);
   startEncoderMillis = millis();
+  Serial.print(" encoderTimer: ");
+  Serial.print(encoderTimer);
 }
 
 void checkLoopTimer(){
   endTimeMillis = millis();
-  encoderTimer = endTimeMillis - startTimeMillis;
+  loopTimerCheck = endTimeMillis - startTimeMillis;
   startTimeMillis = millis();
   loopTimer = (float)loopTimerCheck/1000;
-
+  Serial.print(" LT: ");
+  Serial.print(loopTimer);
 }
 
-void kinematic(){
-  
+void forwardKinematic(){
+  checkLoopTimer();
+
   leftPosition = (2*phi*wheelsRadius*encoder_position)/encoderCPR;
   rightPosition = (2*phi*wheelsRadius*R_encoder_position)/encoderCPR;
 
   checkEncoderTimer();
-
-  velocityRight = (leftPosition - previousLeftPosition)*1000/encoderCPR;
-  velocityLeft = (rightPosition - previousRightPosition)*1000/encoderPPR;
+  
+  velocityRight = (leftPosition - previousLeftPosition)*1000/encoderTimer;
+  velocityLeft = (rightPosition - previousRightPosition)*1000/encoderTimer;
+  Serial.print(" veloRight : ");
+  Serial.print(velocityRight);
+  Serial.print(" veloLeft: ");
+  Serial.print(velocityLeft);
 
   previousLeftPosition = leftPosition;
   previousRightPosition = rightPosition;
@@ -691,9 +701,9 @@ void kinematic(){
   else if ((velocityLeft == velocityRight)){
     xPosition = lastXPosition + velocityLeft * loopTimer * cos(lastThetaPosition);
     yPosition = lastYPosition + velocityLeft * loopTimer * sin(lastThetaPosition);
-    thetaPosition = lastThetaPosition;
+    thetaPosition = lastThetaPosition;  
   }
-  else if ((velocityLeft != - velocityRight) && (((velocityLeft >0) && (velocityRight < 0)) || ((velocityLeft < 0) && (velocityRight > 0)))){
+  else if ((velocityLeft != - velocityRight) && (((velocityLeft > 0) && (velocityRight < 0)) || ((velocityLeft < 0) && (velocityRight > 0)))){
     angularSpeed = (velocityLeft - velocityRight) / wheelLength;
 
     radiusIcc = (wheelLength * (velocityLeft + velocityRight))/(2 * (velocityLeft - velocityRight));
@@ -724,7 +734,14 @@ void kinematic(){
 
   xPositionCm = xPosition;
   yPositionCm = yPosition;
-  thetaPositionDegree = ((int)(thetaPosition*360/(2*phi))%360)>= 0?((int)(thetaPosition*360/(2*phi))%360):360+((int)(thetaPosition*360/(2*phi))%360);
+  thetaPositionDegree = ((int)(thetaPosition*360/(2*phi))%360) >=0? ((int)(thetaPosition*360/(2*phi))%360): 360+((int)(thetaPosition*360/(2*phi))%360);
+
+  Serial.print(" Xpostition : ");
+  Serial.print(xPosition);
+  Serial.print(" yPosition : ");
+  Serial.print(yPosition);
+  Serial.print(" ThetaPostDeg : ");
+  Serial.println(thetaPositionDegree);
 }
 
 
@@ -779,7 +796,7 @@ void getFuzzy(){
     fuzzy();
     //encoderMode();
     goFuzzy();
-    // kinematic();
+    forwardKinematic();
     check = false;
     // Serial.print(" Decision: ");
     // Serial.print(decision);
