@@ -36,12 +36,12 @@ int pointerValue,
     LeftMarkerDetect,
     value;
 
-float xPositionInCM,
-      yPositionInCM,
-      thetaPositionInDegree,
+double xPositionInCM,
+       yPositionInCM,
+       thetaPositionInDegree,
 
-      leftLinearSpeed,
-      rightLinearSpeed;
+       leftLinearSpeed,
+       rightLinearSpeed;
 
 float voltageDividerOne,
       voltageDividerTwo,
@@ -405,7 +405,7 @@ void getSensor(){
         yPositionInCM=value;
       }
       else if (pointerValue == 9){
-        thetaPositionInDegree;
+        thetaPositionInDegree=value;
       }
       // else if(pointerValue == 5){
       //   R_encoder_position=value;
@@ -678,6 +678,19 @@ void fuzzy(){
   defuzzification();
 }
 
+// void uvActivationKinematic(){ // masih error
+//     if (avgEncoder >= 300 * n)
+//   {
+//     n++;
+//     // previousX = xKinematic;
+//     // previousY = yKinematic;
+//     stop();
+//     uvActivation();
+//     delay(60000);
+//     uvDeActivation();
+//   }
+// }
+
 // void encoderMode(){
 //   yRight = R_encoder_position;
 //   yLeft = encoder_position;
@@ -842,6 +855,7 @@ void fuzzy(){
 
 void getFuzzy(){
   getSensor();
+  getKinematicData();
   if(check == true){
     fuzzy();
     //encoderMode();
@@ -1124,15 +1138,15 @@ void loop() {
 // #define wheelCircumference ((wheelRadius * phi) / encoderPPR)
 // #define xEncoder 2.108012
 
-// #define encoderLeftA 4
-// #define encoderLeftB 2
+// #define encoderLeftA 2
+// #define encoderLeftB 4
 
 // #define encoderRightA 5
 // #define encoderRightB 3
 
 // kinematicAUMR_RS kinematics(encoderLeftA, encoderLeftB, encoderRightA, encoderRightB, wheelRadius, rangeBetweenWheels, encoderPPR);
 
-// float xPositionInCM,
+// double xPositionInCM,
 //       yPositionInCM,
 //       thetaPositionInDegree,
 
@@ -1147,6 +1161,125 @@ void loop() {
 
 //   Serial.print(loopTimer);
 //   Serial.print("\t");
+// }
+
+// void ForkRightDetect(){
+//   digitalWrite(ForkRight, HIGH);
+//   digitalWrite(ForkRight, LOW);
+// }
+
+// void ForkLeftDetect(){
+//   digitalWrite(ForkLeft, HIGH);
+//   digitalWrite(ForkLeft, LOW);
+// }
+
+// int trackDetect(){
+//   int TrackPresentValue = digitalRead(TrackPresent);
+//   // Serial.print(" TP: ");
+//   // Serial.print(TrackPresentValue);
+
+//   return TrackPresentValue;
+// }
+
+// int AnalogOutDetect(){
+//   int AnalogOutValue = analogRead(AnalogOut);
+//   // Serial.print(" AO: ");
+//   // Serial.print(AnalogOutValue);
+  
+//   return AnalogOutValue;
+// }
+
+// int RightMarkerDetect() {
+//   int RightMarkerValue = digitalRead(RightMarker);
+//   // Serial.print(" RM: ");
+//   // Serial.print(RightMarkerValue);
+
+//   return RightMarkerValue;
+// }
+
+// int LeftMarkerDetect(){
+//   int LeftMarkerValue = digitalRead(LeftMarker);
+//   // Serial.print(" LM: ");
+//   // Serial.println(LeftMarkerValue);
+
+//  return LeftMarkerValue;
+// }
+
+
+// void sendDataMagnetic(){
+//   // encoder();
+//   //Magnetic Sensor
+//   Slave.print("!");
+//   delay(20);
+//   Slave.print(trackDetect());
+//   delay(20);
+
+//   Slave.print("@");
+//   delay(20);
+//   Slave.print(AnalogOutDetect());
+//   delay(20);
+  
+//   Slave.print("#");
+//   delay(20);
+//   Slave.print(RightMarkerDetect());
+//   delay(20);
+  
+//   Slave.print("$");
+//   delay(20);
+//   Slave.print(LeftMarkerDetect());
+//   delay(20);  
+
+//  // Encoder
+//   // Slave.print("%");
+//   // Slave.print(R_encoder_position);
+
+//   // Slave.print("^");
+//   // Slave.print(encoder_position);
+// }
+
+// void kinematicToMaster()
+// {
+//   // Delay to adjust speed of the master microcontroller
+//   int delaySending = 5;
+
+//   // Print to master
+//   Slave.print("%");
+//   delay(delaySending);
+//   Slave.print((int)leftLinearSpeed);
+//   delay(delaySending);
+
+//   Slave.print("^");
+//   delay(delaySending);
+//   Slave.print((int)rightLinearSpeed);
+//   delay(delaySending);
+
+//   Slave.print("&");
+//   delay(delaySending);
+//   Slave.print((int)xPositionInCM);
+//   delay(delaySending);
+
+//   Slave.print("*");
+//   delay(delaySending);
+//   Slave.print((int)yPositionInCM);
+//   delay(delaySending);
+
+//   Slave.print("-");
+//   delay(delaySending);
+//   Slave.print((int)thetaPositionInDegree);
+//   delay(delaySending);
+// }
+
+// void getKinematicData(){
+//   Serial.print("xPostCM: ");
+//   Serial.print(xPositionInCM);
+//   Serial.print(" yPostCM: ");
+//   Serial.print(yPositionInCM);
+//   Serial.print(" ThetPostDeg: ");
+//   Serial.print(thetaPositionInDegree);
+//   Serial.print(" LeftLinSpd: ");
+//   Serial.print(leftLinearSpeed);
+//   Serial.print(" RghtLnrSpd: ");
+//   Serial.println(rightLinearSpeed);
 // }
 
 // void processLeftForward()
@@ -1167,80 +1300,6 @@ void loop() {
 // void processRightBackward()
 // {
 //   kinematics.processRightBackward();
-// }
-
-// void kinematicToMaster()
-// {
-//   // Delay to adjust speed of the master microcontroller
-//   int delaySending = 5;
-
-//   // Print to master
-//   Slave.println("%");
-//   delay(delaySending);
-//   Slave.print((int)leftLinearSpeed);
-//   delay(delaySending);
-
-//   Slave.print("^");
-//   delay(delaySending);
-//   Slave.print((int)rightLinearSpeed);
-//   delay(delaySending);
-
-//   Slave.println("&");
-//   delay(delaySending);
-//   Slave.print((int)xPositionInCM);
-//   delay(delaySending);
-
-//   Slave.print("*");
-//   delay(delaySending);
-//   Slave.print((int)yPositionInCM);
-//   delay(delaySending);
-
-//   Slave.print("-");
-//   delay(delaySending);
-//   Slave.print((int)thetaPositionInDegree);
-//   delay(delaySending);
-// }
-
-// void ForkRightDetect(){
-//   digitalWrite(ForkRight, HIGH);
-//   digitalWrite(ForkRight, LOW);
-// }
-
-// void ForkLeftDetect(){
-//   digitalWrite(ForkLeft, HIGH);
-//   digitalWrite(ForkLeft, LOW);
-// }
-
-// int trackDetect(){
-//   int TrackPresentValue = digitalRead(TrackPresent);
-//   Serial.print(" TP: ");
-//   Serial.print(TrackPresentValue);
-
-//   return TrackPresentValue;
-// }
-
-// int AnalogOutDetect(){
-//   int AnalogOutValue = analogRead(AnalogOut);
-//   Serial.print(" AO: ");
-//   Serial.print(AnalogOutValue);
-  
-//   return AnalogOutValue;
-// }
-
-// int RightMarkerDetect() {
-//   int RightMarkerValue = digitalRead(RightMarker);
-//   Serial.print(" RM: ");
-//   Serial.print(RightMarkerValue);
-
-//   return RightMarkerValue;
-// }
-
-// int LeftMarkerDetect(){
-//   int LeftMarkerValue = digitalRead(LeftMarker);
-//   Serial.print(" LM: ");
-//   Serial.println(LeftMarkerValue);
-
-//  return LeftMarkerValue;
 // }
 
 // // void encoder_isr() {
@@ -1286,36 +1345,7 @@ void loop() {
   
 // //   R_encoder_oldpos = R_encoder_position;
 // // }
-// void sendDataMagnetic(){
-//   // encoder();
-//   //Magnetic Sensor
-//   Slave.print("!");
-//   delay(20);
-//   Slave.print(trackDetect());
-//   delay(20);
 
-//   Slave.print("@");
-//   delay(20);
-//   Slave.print(AnalogOutDetect());
-//   delay(20);
-  
-//   Slave.print("#");
-//   delay(20);
-//   Slave.print(RightMarkerDetect());
-//   delay(20);
-  
-//   Slave.print("$");
-//   delay(20);
-//   Slave.print(LeftMarkerDetect());
-//   delay(20);  
-
-//  // Encoder
-//   // Slave.print("%");
-//   // Slave.print(R_encoder_position);
-
-//   // Slave.print("^");
-//   // Slave.print(encoder_position);
-// }
 
 // void setup() {
 
@@ -1328,16 +1358,16 @@ void loop() {
 //   pinMode(LeftMarker, INPUT);
 //   pinMode(TrackPresent, INPUT);
 //   pinMode(AnalogOut, INPUT);
-//   pinMode(encoderLeftA, INPUT_PULLUP);
-//   pinMode(encoderLeftB, INPUT_PULLUP);
-//   pinMode(encoderRightA, INPUT_PULLUP);
-//   pinMode(encoderRightB, INPUT_PULLUP);
 //   // pinMode(COSPin, INPUT_PULLUP);
 //   // pinMode(SINPin, INPUT);
 //   // pinMode(R_COSPin, INPUT_PULLUP);
 //   // pinMode(R_SINPin, INPUT);
 //   // attachInterrupt(digitalPinToInterrupt(COSPin), encoder_isr, RISING);
 //   // attachInterrupt(digitalPinToInterrupt(R_COSPin), R_encoder_isr, RISING);
+//   pinMode(encoderLeftA, INPUT_PULLUP);
+//   pinMode(encoderLeftB, INPUT_PULLUP);
+//   pinMode(encoderRightA, INPUT_PULLUP);
+//   pinMode(encoderRightB, INPUT_PULLUP);
 //   attachInterrupt(digitalPinToInterrupt(encoderLeftA), processLeftForward, CHANGE);
 //   attachInterrupt(digitalPinToInterrupt(encoderLeftB), processLeftBackward, CHANGE);
 //   attachInterrupt(digitalPinToInterrupt(encoderRightA), processRightForward, CHANGE);
@@ -1345,13 +1375,22 @@ void loop() {
 // }
 
 // void loop() {
-//   //encoder();
+//   //encoder()
+//   checkLoopTimer();
+
 //   kinematics.calculate();
 //   xPositionInCM = kinematics.getXPositionInCM();
 //   yPositionInCM = kinematics.getYPositionInCM();
 //   thetaPositionInDegree = kinematics.getThetaInDegree();
 //   leftLinearSpeed = kinematics.getLeftSpeed();
 //   rightLinearSpeed = kinematics.getRightSpeed();
-//   kinematicToMaster();
+
+//   //print kinematics data
+//   getKinematicData();
+
+//   //send Magnetic data to master
 //   sendDataMagnetic();
+
+//   //send kinematic to master
+//   kinematicToMaster();
 // }
