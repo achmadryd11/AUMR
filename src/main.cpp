@@ -679,11 +679,10 @@ void fuzzy(){
 }
 
 // void uvActivationKinematic(){ // masih error
-//     if (avgEncoder >= 300 * n)
+//   resultant = sqrt(xPositionInCM + yPositionInCM)
+//     if (resultant >= 300 * n)
 //   {
 //     n++;
-//     // previousX = xKinematic;
-//     // previousY = yKinematic;
 //     stop();
 //     uvActivation();
 //     delay(60000);
