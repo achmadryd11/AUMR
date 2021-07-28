@@ -77,6 +77,12 @@
   #define BUZZ 42       // Buzzer Relay PIN Before Turn the Lamp ON
   #define ACTIVE_RL 30   // Activation Relay for Inverter
 
+  int n = 1;
+  
+  unsigned int xPostKuadrat,
+                yPostKuadrat,
+                kuadrat,
+                resultant;
 
   const int rellayOn = HIGH,
             rellayOff = LOW,
@@ -349,7 +355,7 @@
     }
   }
   void getMagneticData(){
-    Serial.print("TP: ");
+    Serial.print(" TP: ");
     Serial.print(trackDetect);
     Serial.print(" AO: ");
     Serial.print(AnalogDetect);
@@ -600,17 +606,31 @@
     defuzzification();
   }
 
-  // void uvActivationKinematic(){ 
-  //   resultant = sqrt(xPositionInCM + yPositionInCM)
-  //     if (resultant >= 300 * n)
-  //   {
-  //     n++;
-  //     stop();
-  //     uvActivation();
-  //     delay(60000);
-  //     uvDeActivation();
-  //   }
-  // }
+  void uvActivationKinematic(){
+    xPostKuadrat = xPositionInCM * xPositionInCM;
+    yPostKuadrat = yPositionInCM * yPositionInCM;
+    kuadrat = xPostKuadrat + yPostKuadrat;
+    resultant = sqrt(kuadrat);
+    //resultantValue = resultant * 2;
+    Serial.print(" kuadrat: ");
+    Serial.print(kuadrat);
+    Serial.print(" xPostKuadrat: ");
+    Serial.print(xPostKuadrat);
+    Serial.print(" yPostKuadrat: ");
+    Serial.print(yPostKuadrat);
+    Serial.print(" resultant: ");
+    Serial.print(resultant);
+    // Serial.print(" restVal: ");
+    // Serial.print(resultantValue);
+      if (resultant >= 300 * n)
+    {
+      n++;
+      stop();
+      uvActivation();
+      delay(30000);
+      uvDeActivation();
+    }
+  }
 
   // void encoderMode(){
   //   yRight = R_encoder_position;
@@ -643,10 +663,9 @@
     if(check == true){
       getMagneticData();
       getKinematicData();
-
       fuzzy();
-      //encoderMode();
       goFuzzy();
+      uvActivationKinematic();
       //forwardKinematic();
       check = false;
       // Serial.print(" Decision: ");
@@ -1010,6 +1029,21 @@
     delay(delaySending);
     Slave.print(AnalogOutDetect());
     delay(delaySending);
+
+    Slave.print("&");
+    delay(delaySending);
+    Slave.print((int)xPositionInCM);
+    delay(delaySending);
+
+    Slave.print("=");
+    delay(delaySending);
+    Slave.print((int)yPositionInCM);
+    delay(delaySending);
+
+    Slave.print(")");
+    delay(delaySending);
+    Slave.print((int)thetaPositionInDegree);
+    delay(delaySending);
     
     // Slave.print("#");
     // delay(delaySending);
@@ -1031,20 +1065,7 @@
     // Slave.print((int)rightLinearSpeed);
     // delay(delaySending);
 
-    Slave.print("&");
-    delay(delaySending);
-    Slave.print((int)xPositionInCM);
-    delay(delaySending);
-
-    Slave.print("=");
-    delay(delaySending);
-    Slave.print((int)yPositionInCM);
-    delay(delaySending);
-
-    Slave.print(")");
-    delay(delaySending);
-    Slave.print((int)thetaPositionInDegree);
-    delay(delaySending);
+    
   // Encoder
     // Slave.print("%");
     // Slave.print(R_encoder_position);
