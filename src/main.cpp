@@ -40,7 +40,7 @@
       LeftMarkerDetect,
       value;
 
-  int xPositionInCM,
+  long xPositionInCM,
       yPositionInCM,
       thetaPositionInDegree,
 
@@ -77,13 +77,13 @@
   #define BUZZ 42       // Buzzer Relay PIN Before Turn the Lamp ON
   #define ACTIVE_RL 30   // Activation Relay for Inverter
 
-  int n = 1;
-  
-  unsigned int xPostKuadrat,
-                yPostKuadrat,
-                kuadrat,
-                resultant;
+  int n = 1,
+      resultant;
 
+  long xPostKuadrat,
+       yPostKuadrat,
+       kuadrat;
+      
   const int rellayOn = HIGH,
             rellayOff = LOW,
             BuzzerOn = HIGH,
@@ -202,7 +202,7 @@
   float error,
         RsetPointPwm = 80,
         LsetPointPwm = 80,
-        setPointSensor = 320,
+        setPointSensor = 300,
         pValue,
         Kp = 0.4,
         Ki,
@@ -372,6 +372,15 @@
     Serial.print(yPositionInCM);
     Serial.print(" thtPostDeg: ");
     Serial.println(thetaPositionInDegree);
+  }
+
+  void getUVActivationData(){
+    Serial.print(" xPostKuadrat: ");
+    Serial.print(xPostKuadrat);
+    Serial.print(" yPostKuadrat: ");
+    Serial.print(yPostKuadrat);
+    Serial.print(" resultant: ");
+    Serial.print(resultant);
   }
 
   float callErrorPosition(float x, float xOne, float Xtwo, String highLow){
@@ -609,20 +618,8 @@
   void uvActivationKinematic(){
     xPostKuadrat = xPositionInCM * xPositionInCM;
     yPostKuadrat = yPositionInCM * yPositionInCM;
-    kuadrat = xPostKuadrat + yPostKuadrat;
-    resultant = sqrt(kuadrat);
-    //resultantValue = resultant * 2;
-    Serial.print(" kuadrat: ");
-    Serial.print(kuadrat);
-    Serial.print(" xPostKuadrat: ");
-    Serial.print(xPostKuadrat);
-    Serial.print(" yPostKuadrat: ");
-    Serial.print(yPostKuadrat);
-    Serial.print(" resultant: ");
-    Serial.print(resultant);
-    // Serial.print(" restVal: ");
-    // Serial.print(resultantValue);
-      if (resultant >= 300 * n)
+    resultant = sqrt(xPostKuadrat + yPostKuadrat);
+    if (resultant >= 300 * n)
     {
       n++;
       stop();
@@ -632,56 +629,28 @@
     }
   }
 
-  // void encoderMode(){
-  //   yRight = R_encoder_position;
-  //   yLeft = encoder_position;  
-
-  //   yRightTick = (yRight/(6*xEncoder));
-  //   yLeftTick = (yLeft/(6*xEncoder));
-  //   avgEncoder = ((yRightTick+yLeftTick)/2);
-
-  //   if (avgEncoder >= 300 * n)
-  //   {
-  //     n++;
-  //     // previousX = xKinematic;
-  //     // previousY = yKinematic;
-  //     stop();
-  //     uvActivation();
-  //     delay(60000);
-  //     uvDeActivation();
-  //   }
-  //   Serial.print("AvgDistance:  ");
-  //   Serial.print(avgEncoder);
-  //   Serial.print(" RightDistance: ");
-  //   Serial.print(yRightTick);
-  //   Serial.print(" LeftDistance: ");
-  //   Serial.print(yLeftTick);
-  // }
-
   void getFuzzy(){
     getSensor();
     if(check == true){
-      getMagneticData();
-      getKinematicData();
+      // getMagneticData();
+      // getKinematicData();
       fuzzy();
       goFuzzy();
-      uvActivationKinematic();
+      //uvActivationKinematic();
+      Serial.print("DATA,TIME,");
+      Serial.print(errorPosition);
+      Serial.print(", ");
+      Serial.print(deltaErrorPosition);
+      Serial.print(", ");
+      Serial.print(xPositionInCM);
+      Serial.print(", ");
+      Serial.print(yPositionInCM);
+      Serial.print(", ");
+      Serial.print(rightSpeedVal);
+      Serial.print(", ");
+      Serial.println(leftSpeedVal);
       //forwardKinematic();
       check = false;
-      // Serial.print(" Decision: ");
-      // Serial.print(decision);
-      // Serial.print(" Devider: ");
-      // Serial.print(devider);
-      // Serial.print(" errorP: ");
-      // Serial.print(errorPosition);
-      // Serial.print(" DeltaEP: ");
-      // Serial.print(deltaErrorPosition);
-      // Serial.print(" Rpwm: ");
-      // Serial.print(rightSpeedVal);
-      // Serial.print(" Lpwm: ");
-      // Serial.print(leftSpeedVal);
-      // Serial.print(" speedMotor: ");
-      // Serial.println(speedMotor);
     }
   }
 
@@ -860,11 +829,27 @@
     delay(250);
   }
 
+  void testing(){
+    Serial.print("DATA,TIME,");
+    Serial.print(errorPosition);
+    Serial.print(", ");
+    Serial.print(deltaErrorPosition);
+    Serial.print(", ");
+    Serial.print(xPositionInCM);
+    Serial.print(", ");
+    Serial.print(yPositionInCM);
+    Serial.print(", ");
+    Serial.print(rightSpeedVal);
+    Serial.print(", ");
+    Serial.println(leftSpeedVal);
+  }
 
   void setup() {
     Wire.beginTransmission(113);
     Master.begin(115200);
-    Serial.begin(115200);
+    Serial.begin(128000);
+    Serial.println("CLEARDATA");
+    Serial.println("LABEL,CLOCK,DeltaError,Error,xPositionInCM,yPositionInCM,Output Fuzzy Right PWM,Output Fuzzy Left PWM");
     pinMode(MRF, OUTPUT);
     pinMode(MRB, OUTPUT);
     pinMode(MLF, OUTPUT);
@@ -889,6 +874,7 @@
   void loop() {
     // checkLoopTimer();
     getFuzzy();
+    //testing();
     //uvActivation();
     //ultraSonic();
     //PID();
@@ -942,9 +928,9 @@
                 endTimeMillis,
                 loopTimer;
 
-  #define phi 3.14
-  #define rangeBetweenWheels 37
-  #define wheelRadius 7.62 //6" to cm
+  #define phi 3.14285714286
+  #define rangeBetweenWheels 34.5
+  #define wheelRadius 7.45 //6" to cm
   #define encoderPPR 600
   #define encoderCPR (4 * encoderPPR)
   #define wheelCircumference ((wheelRadius * phi) / encoderPPR)
@@ -958,7 +944,7 @@
 
   kinematicAUMR_RS kinematics(encoderLeftA, encoderLeftB, encoderRightA, encoderRightB, wheelRadius, rangeBetweenWheels, encoderPPR);
 
-  int xPositionInCM,
+  long xPositionInCM,
         yPositionInCM,
         thetaPositionInDegree,
 
@@ -1032,17 +1018,17 @@
 
     Slave.print("&");
     delay(delaySending);
-    Slave.print((int)xPositionInCM);
+    Slave.print((long)xPositionInCM);
     delay(delaySending);
 
     Slave.print("=");
     delay(delaySending);
-    Slave.print((int)yPositionInCM);
+    Slave.print((long)yPositionInCM);
     delay(delaySending);
 
     Slave.print(")");
     delay(delaySending);
-    Slave.print((int)thetaPositionInDegree);
+    Slave.print((long)thetaPositionInDegree);
     delay(delaySending);
     
     // Slave.print("#");
@@ -1085,11 +1071,11 @@
 
   void getKinematicData(){
     Serial.print("xPostCM: ");
-    Serial.print((int)xPositionInCM);
+    Serial.print((long)xPositionInCM);
     Serial.print(" yPostCM: ");
-    Serial.print((int)yPositionInCM);
+    Serial.print((long)yPositionInCM);
     Serial.print(" ThetPostDeg: ");
-    Serial.print((int)thetaPositionInDegree);
+    Serial.print((long)thetaPositionInDegree);
     Serial.print(" LeftLinSpd: ");
     Serial.print(leftLinearSpeed);
     Serial.print(" RghtLnrSpd: ");
@@ -1193,8 +1179,8 @@
     checkLoopTimer();
 
     kinematics.calculate();
-    xPositionInCM = kinematics.getXPositionInCM();
-    yPositionInCM = kinematics.getYPositionInCM();
+    yPositionInCM = kinematics.getXPositionInCM();
+    xPositionInCM = kinematics.getYPositionInCM();
     thetaPositionInDegree = kinematics.getThetaInDegree();
     leftLinearSpeed = kinematics.getLeftSpeed();
     rightLinearSpeed = kinematics.getRightSpeed();
