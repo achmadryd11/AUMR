@@ -898,7 +898,7 @@
   // Open The Command if want to upload on Slave
   #include <Arduino.h>
   #include <Wire.h>
-  #include <kinematics_RS.h>
+  #include<kinematics_RS.h>
   // Slave to Master
   #define Slave Serial3
 
@@ -930,7 +930,7 @@
 
   #define phi 3.14285714286
   #define rangeBetweenWheels 34.5
-  #define wheelRadius 7.45 //6" to cm
+  #define wheelRadius 15 //6" to cm
   #define encoderPPR 600
   #define encoderCPR (4 * encoderPPR)
   #define wheelCircumference ((wheelRadius * phi) / encoderPPR)
@@ -948,8 +948,14 @@
         yPositionInCM,
         thetaPositionInDegree,
 
-      leftLinearSpeed,
-      rightLinearSpeed;
+        leftLinearSpeed,
+        rightLinearSpeed;
+  
+  float leftPosition,
+        rightPosition;
+  
+  int leftCounter,
+      rightCounter;
 
   void checkLoopTimer()
   {
@@ -1184,8 +1190,14 @@
     thetaPositionInDegree = kinematics.getThetaInDegree();
     leftLinearSpeed = kinematics.getLeftSpeed();
     rightLinearSpeed = kinematics.getRightSpeed();
+    rightPosition = kinematics.getRightPositionInCM();
+    leftPosition = kinematics.getLeftPositionInCM();
 
-    
+    Serial.print(" rightPost: "); 
+    Serial.print(rightPosition);
+    Serial.print(" leftPost: ");
+    Serial.print(leftPosition);
+
     //print kinematics data
     getKinematicData();
 
