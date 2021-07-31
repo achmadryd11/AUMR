@@ -1,10 +1,14 @@
 #include <Arduino.h>
 
-#define master_code true
-// #define slave_code true
+// #define master_code true
+#define slave_code true
+// #define loadTesting true
+// #define loadFuzzy true
+#define loadEncoder true
+// #define loadKinematic true
 #ifdef master_code
   #include <Wire.h>
-
+  
   // --------------- Master ---------------
   // Open The Command if want to upload on Slave
 
@@ -29,6 +33,7 @@
       rightSpeed,
       leftSpeedVal,
       rightSpeedVal;
+      
 
   bool check = false;
 
@@ -40,12 +45,12 @@
       LeftMarkerDetect,
       value;
 
-  long xPositionInCM,
-      yPositionInCM,
-      thetaPositionInDegree,
+long xPositionInCM,
+     yPositionInCM,
+     thetaPositionInDegree,
 
-        leftLinearSpeed,
-        rightLinearSpeed;
+     leftLinearSpeed,
+     rightLinearSpeed;
 
   float voltageDividerOne,
         voltageDividerTwo,
@@ -202,7 +207,7 @@
   float error,
         RsetPointPwm = 80,
         LsetPointPwm = 80,
-        setPointSensor = 300,
+        setPointSensor = 320,
         pValue,
         Kp = 0.4,
         Ki,
@@ -346,14 +351,16 @@
         }
         else if (pointerValue == 4){
           yPositionInCM=value;
+          check = true;
         }
         else if (pointerValue == 5){
           thetaPositionInDegree=value;
-        check = true;        
+          check = true;        
         } 
       }
     }
   }
+
   void getMagneticData(){
     Serial.print(" TP: ");
     Serial.print(trackDetect);
@@ -629,6 +636,44 @@
     }
   }
 
+  void loadFuzzyPWM(){
+    Serial.print("DATA,TIME,");
+    Serial.print(errorPosition);
+    Serial.print(", ");
+    Serial.print(deltaErrorPosition);
+    Serial.print(", ");
+    Serial.print(rightSpeedVal);
+    Serial.print(", ");
+    Serial.println(leftSpeedVal);
+  }
+  
+  void loadKinematics(){
+    Serial.print("DATA,TIME,");
+    Serial.print(xPositionInCM);
+    Serial.print(", ");
+    Serial.println(yPositionInCM);
+  }
+
+  // void loadVariationFuzzy(){
+
+  // }
+
+  void testing(){
+    Serial.print("DATA,TIME,");
+    Serial.print(errorPosition);
+    Serial.print(", ");
+    Serial.print(deltaErrorPosition);
+    Serial.print(", ");
+    Serial.print(xPositionInCM);
+    Serial.print(", ");
+    Serial.print(yPositionInCM);
+    Serial.print(", ");
+    Serial.print(rightSpeedVal);
+    Serial.print(", ");
+    Serial.println(leftSpeedVal);
+    
+  }
+
   void getFuzzy(){
     getSensor();
     if(check == true){
@@ -637,18 +682,19 @@
       fuzzy();
       goFuzzy();
       //uvActivationKinematic();
-      Serial.print("DATA,TIME,");
-      Serial.print(errorPosition);
-      Serial.print(", ");
-      Serial.print(deltaErrorPosition);
-      Serial.print(", ");
-      Serial.print(xPositionInCM);
-      Serial.print(", ");
-      Serial.print(yPositionInCM);
-      Serial.print(", ");
-      Serial.print(rightSpeedVal);
-      Serial.print(", ");
-      Serial.println(leftSpeedVal);
+      #ifdef loadFuzzy
+        loadFuzzyPWM();
+      #endif
+
+      #ifdef loadKinematic
+        loadKinematics();
+      #endif
+
+      #ifdef loadTesting
+        testing();
+      #endif
+
+      
       //forwardKinematic();
       check = false;
     }
@@ -829,27 +875,26 @@
     delay(250);
   }
 
-  void testing(){
-    Serial.print("DATA,TIME,");
-    Serial.print(errorPosition);
-    Serial.print(", ");
-    Serial.print(deltaErrorPosition);
-    Serial.print(", ");
-    Serial.print(xPositionInCM);
-    Serial.print(", ");
-    Serial.print(yPositionInCM);
-    Serial.print(", ");
-    Serial.print(rightSpeedVal);
-    Serial.print(", ");
-    Serial.println(leftSpeedVal);
-  }
+ 
 
   void setup() {
     Wire.beginTransmission(113);
     Master.begin(115200);
     Serial.begin(128000);
     Serial.println("CLEARDATA");
-    Serial.println("LABEL,CLOCK,DeltaError,Error,xPositionInCM,yPositionInCM,Output Fuzzy Right PWM,Output Fuzzy Left PWM");
+
+    #ifdef loadFuzzy
+      Serial.println("LABEL,CLOCK,DeltaError,Error,Output Fuzzy Right PWM,Output Fuzzy Left PWM");
+    #endif
+
+    #ifdef loadKinematic
+      Serial.println("LABEL,CLOCK,xPositionInCM,yPositionInCM");
+    #endif
+
+    #ifdef loadTesting
+      Serial.println("LABEL,CLOCK,DeltaError,Error,xPositionInCM,yPositionInCM,LeftEncoder,RightEncoder,Output Fuzzy Right PWM,Output Fuzzy Left PWM");
+    #endif
+
     pinMode(MRF, OUTPUT);
     pinMode(MRB, OUTPUT);
     pinMode(MLF, OUTPUT);
@@ -898,7 +943,7 @@
   // Open The Command if want to upload on Slave
   #include <Arduino.h>
   #include <Wire.h>
-  #include<kinematics_RS.h>
+  #include <kinematics_RS.h> 
   // Slave to Master
   #define Slave Serial3
 
@@ -939,10 +984,10 @@
   #define encoderLeftA 2
   #define encoderLeftB 4
 
-  #define encoderRightA 5
-  #define encoderRightB 3
+  #define encoderRightA 3
+  #define encoderRightB 5
 
-  kinematicAUMR_RS kinematics(encoderLeftA, encoderLeftB, encoderRightA, encoderRightB, wheelRadius, rangeBetweenWheels, encoderPPR);
+  //kinematicAUMR_RS kinematics(encoderLeftA, encoderLeftB, encoderRightA, encoderRightB, wheelRadius, rangeBetweenWheels, encoderPPR);
 
   long xPositionInCM,
         yPositionInCM,
@@ -953,6 +998,22 @@
   
   float leftPosition,
         rightPosition;
+  
+  float currentStateCLK1,
+        lastStateCLK1,
+        currentStateCLK2,
+        lastStateCLK2;
+
+  float counter1 = 0,
+        counter2 = 0;
+  
+  float yRight,
+        yLeft,
+        
+        yRightTick,
+        yLeftTick,
+
+        avgEncoder;
   
   int leftCounter,
       rightCounter;
@@ -979,32 +1040,32 @@
 
   int trackDetect(){
     int TrackPresentValue = digitalRead(TrackPresent);
-    Serial.print(" TP: ");
-    Serial.print(TrackPresentValue);
+    // Serial.print(" TP: ");
+    // Serial.print(TrackPresentValue);
 
     return TrackPresentValue;
   }
 
   int AnalogOutDetect(){
     int AnalogOutValue = analogRead(AnalogOut);
-    Serial.print(" AO: ");
-    Serial.print(AnalogOutValue);
+    // Serial.print(" AO: ");
+    // Serial.print(AnalogOutValue);
     
     return AnalogOutValue;
   }
 
   int RightMarkerDetect() {
     int RightMarkerValue = digitalRead(RightMarker);
-    Serial.print(" RM: ");
-    Serial.print(RightMarkerValue);
+    // Serial.print(" RM: ");
+    // Serial.print(RightMarkerValue);
 
     return RightMarkerValue;
   }
 
   int LeftMarkerDetect(){
     int LeftMarkerValue = digitalRead(LeftMarker);
-    Serial.print(" LM: ");
-    Serial.print(LeftMarkerValue);
+    // Serial.print(" LM: ");
+    // Serial.print(LeftMarkerValue);
 
   return LeftMarkerValue;
   }
@@ -1056,24 +1117,7 @@
     // delay(delaySending);
     // Slave.print((int)rightLinearSpeed);
     // delay(delaySending);
-
-    
-  // Encoder
-    // Slave.print("%");
-    // Slave.print(R_encoder_position);
-
-    // Slave.print("^");
-    // Slave.print(encoder_position);
   }
-
-  // void kinematicToMaster()
-  // {
-  //   // Delay to adjust speed of the master microcontroller
-    
-
-  //   // Print to master
-    
-  // }
 
   void getKinematicData(){
     Serial.print("xPostCM: ");
@@ -1088,75 +1132,83 @@
     Serial.println(rightLinearSpeed);
   }
 
-  void processLeftForward()
-  {
-    kinematics.processLeftForward();
-  }
+  
 
-  void processLeftBackward()
-  {
-    kinematics.processLeftBackward();
-  }
-
-  void processRightForward()
-  {
-    kinematics.processRightForward();
-  }
-
-  void processRightBackward()
-  {
-    kinematics.processRightBackward();
-  }
-
-  // void encoder_isr() {
-    
-  //   if  (digitalRead(SINPin) == LOW) {
-  //     // clockwise rotation
-  //     encoder_state=ENC_CLOCKWISE_ROTATION;
-  //     encoder_position++;
-  //   } else {
-  //     //counter-clockwise rotation
-  //     encoder_state=ENC_COUNTERCLOCKWISE_ROTATION;
-  //     encoder_position--;    
-  //   } 
-  // }
-  // void R_encoder_isr() {
-    
-  //   if  (digitalRead(R_SINPin) == HIGH) {
-  //     // clockwise rotation
-  //     R_encoder_state=ENC_CLOCKWISE_ROTATION;
-  //     R_encoder_position++;
-  //   } else {
-  //     //counter-clockwise rotation
-  //     R_encoder_state=ENC_COUNTERCLOCKWISE_ROTATION;
-  //     R_encoder_position--;    
-  //   } 
-  // }
-  // void encoder(){
-  //   if (encoder_oldpos == encoder_position) encoder_state= ENC_STOP;
-
-  //   // output encoder incremental and status
-  //   Serial.print("Left Encoder position: ");
-  //   Serial.print(encoder_position);
-  //   //Serial.print(",Left Encoder state: ");
-    
-  //   encoder_oldpos = encoder_position;
-
-  //   if (R_encoder_oldpos == R_encoder_position) R_encoder_state= ENC_STOP;
-
-  //   // output encoder incremental and status
-  //   Serial.print(" Right Encoder position: ");
-  //   Serial.println(R_encoder_position);
-  //   //Serial.println(",Right Encoder state: ");
-    
-  //   R_encoder_oldpos = R_encoder_position;
+  // void processLeftForward()
+  // {
+  //   kinematics.processLeftForward();
   // }
 
+  // void processLeftBackward()
+  // {
+  //   kinematics.processLeftBackward();
+  // }
+
+  // void processRightForward()
+  // {
+  //   kinematics.processRightForward();
+  // }
+
+  // void processRightBackward()
+  // {
+  //   kinematics.processRightBackward();
+  // }
+
+  void updateEncoderLeft(){  
+    currentStateCLK1 = digitalRead(encoderLeftA);  
+    if (currentStateCLK1 != lastStateCLK1  && currentStateCLK1 == 1){
+      if (digitalRead(encoderLeftB) != currentStateCLK1) {
+        counter1 ++;
+      } else {
+        counter1 --;
+      }
+    }
+  lastStateCLK1 = currentStateCLK1;
+  }
+
+  void updateEncoderRight(){
+    currentStateCLK2 = digitalRead(encoderRightA);
+    if (currentStateCLK2 != lastStateCLK2  && currentStateCLK2 == 1){
+      if (digitalRead(encoderRightB) != currentStateCLK2) {
+        counter2 --;
+      } else {
+        counter2 ++;
+      }
+    }
+  lastStateCLK2 = currentStateCLK2;
+  }
+
+  void encoderMode(){
+    yRight = counter2;
+    yLeft = counter1;
+
+    yRightTick = (yRight/(6*xEncoder));
+    yLeftTick = (yLeft/(6*xEncoder));
+    avgEncoder = ((yRightTick+yLeftTick)/2);
+  }
+
+  void loadEncoderData(){
+    Serial.print("DATA,TIME,");
+    Serial.print(counter1);
+    Serial.print(", ");
+    Serial.print(counter2);
+    Serial.print(", ");
+    Serial.print(yLeftTick);
+    Serial.print(", ");
+    Serial.print(yRightTick);
+    Serial.print(", ");
+    Serial.println(avgEncoder);
+  }
 
   void setup() {
 
     Slave.begin(115200);
-    Serial.begin(115200);
+    Serial.begin(128000);
+    Serial.println("CLEARDATA");
+
+    #ifdef loadEncoder
+      Serial.println("LABEL,CLOCK,LeftEncoder,RightEncoder,LeftPositionInCM,RightPositionInCM,AverageValueInCM");
+    #endif
 
     pinMode(ForkRight, OUTPUT);
     pinMode(ForkLeft, OUTPUT);
@@ -1164,42 +1216,38 @@
     pinMode(LeftMarker, INPUT);
     pinMode(TrackPresent, INPUT);
     pinMode(AnalogOut, INPUT);
-    // pinMode(COSPin, INPUT_PULLUP);
-    // pinMode(SINPin, INPUT);
-    // pinMode(R_COSPin, INPUT_PULLUP);
-    // pinMode(R_SINPin, INPUT);
-    // attachInterrupt(digitalPinToInterrupt(COSPin), encoder_isr, RISING);
-    // attachInterrupt(digitalPinToInterrupt(R_COSPin), R_encoder_isr, RISING);
+    
     pinMode(encoderLeftA, INPUT_PULLUP);
     pinMode(encoderLeftB, INPUT_PULLUP);
     pinMode(encoderRightA, INPUT_PULLUP);
     pinMode(encoderRightB, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(encoderLeftA), processLeftForward, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderLeftB), processLeftBackward, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderRightA), processRightForward, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderRightB), processRightBackward, CHANGE);
+
+    attachInterrupt(digitalPinToInterrupt(encoderLeftA), updateEncoderLeft, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderRightA), updateEncoderRight, CHANGE);
   }
 
   void loop() {
     //encoder()
-    checkLoopTimer();
+    // checkLoopTimer();
 
-    kinematics.calculate();
-    yPositionInCM = kinematics.getXPositionInCM();
-    xPositionInCM = kinematics.getYPositionInCM();
-    thetaPositionInDegree = kinematics.getThetaInDegree();
-    leftLinearSpeed = kinematics.getLeftSpeed();
-    rightLinearSpeed = kinematics.getRightSpeed();
-    rightPosition = kinematics.getRightPositionInCM();
-    leftPosition = kinematics.getLeftPositionInCM();
-
-    Serial.print(" rightPost: "); 
-    Serial.print(rightPosition);
-    Serial.print(" leftPost: ");
-    Serial.print(leftPosition);
+    // kinematics.calculate();
+    // yPositionInCM = kinematics.getYPositionInCM();
+    // xPositionInCM = kinematics.getXPositionInCM();
+    // thetaPositionInDegree = kinematics.getThetaInDegree();
+    // leftLinearSpeed = kinematics.getLeftSpeed();
+    // rightLinearSpeed = kinematics.getRightSpeed();
+    // rightPosition = kinematics.getRightPositionInCM();
+    // leftPosition = kinematics.getLeftPositionInCM();
+    // // rightCounter = kinematics.getEncoderRight();
+    // // leftCounter = kinematics.getEncoderLeft();
+    
+    #ifdef loadEncoder
+      encoderMode();
+      loadEncoderData();
+    #endif
 
     //print kinematics data
-    getKinematicData();
+    // getKinematicData();
 
     //send Magnetic data to master
     sendData();
