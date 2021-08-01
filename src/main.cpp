@@ -1,11 +1,16 @@
 #include <Arduino.h>
 
-// #define master_code true
-#define slave_code true
+#define master_code true
+// #define slave_code true
 // #define loadTesting true
 // #define loadFuzzy true
-#define loadEncoder true
+// #define loadEncoder true
 // #define loadKinematic true
+// #define loadMaster true
+#define uvMode true
+// #define loadSlave
+#define printToPC true
+
 #ifdef master_code
   #include <Wire.h>
   
@@ -91,11 +96,17 @@ long xPositionInCM,
       
   const int rellayOn = HIGH,
             rellayOff = LOW,
+            relayOn = LOW,
+            relayOff = HIGH,
             BuzzerOn = HIGH,
             BuzzerOff = LOW,
             buzzerTime = 1000,
             buzzerCycle = 3;
 
+  void relaySteady(){
+    digitalWrite(UB, relayOff);
+    digitalWrite(UF, relayOff);
+  }
   // DHT and FAN
   #define DHT 42        // DHT11 RELAY
   #define FAN_RLY 31    // FAN RELAY
@@ -283,13 +294,15 @@ long xPositionInCM,
   void uvActivation()
   {
     buzzerUV();
-    digitalWrite(UB, rellayOn);
-    digitalWrite(UF, rellayOn);
+    digitalWrite(ACTIVE_RL, relayOn);
+    digitalWrite(UB, relayOn);
+    digitalWrite(UF, relayOn);
   }
 
   void uvDeActivation(){
-    digitalWrite(UB, rellayOff);
-    digitalWrite(UF, rellayOff);
+    digitalWrite(ACTIVE_RL, relayOff);
+    digitalWrite(UB, relayOff);
+    digitalWrite(UF, relayOff);
   }
 
 
@@ -378,7 +391,7 @@ long xPositionInCM,
     Serial.print(" yPostCM: ");
     Serial.print(yPositionInCM);
     Serial.print(" thtPostDeg: ");
-    Serial.println(thetaPositionInDegree);
+    Serial.print(thetaPositionInDegree);
   }
 
   void getUVActivationData(){
@@ -387,7 +400,7 @@ long xPositionInCM,
     Serial.print(" yPostKuadrat: ");
     Serial.print(yPostKuadrat);
     Serial.print(" resultant: ");
-    Serial.print(resultant);
+    Serial.println(resultant);
   }
 
   float callErrorPosition(float x, float xOne, float Xtwo, String highLow){
@@ -631,7 +644,7 @@ long xPositionInCM,
       n++;
       stop();
       uvActivation();
-      delay(30000);
+      delay(120000);
       uvDeActivation();
     }
   }
@@ -682,6 +695,12 @@ long xPositionInCM,
       fuzzy();
       goFuzzy();
       //uvActivationKinematic();
+      #ifdef uvMode
+        getKinematicData();
+        uvActivationKinematic();
+        getUVActivationData();
+      #endif
+
       #ifdef loadFuzzy
         loadFuzzyPWM();
       #endif
@@ -702,8 +721,7 @@ long xPositionInCM,
 
   void uvActivationReset()
   {
-    digitalWrite(UB, rellayOff);
-    digitalWrite(UF, rellayOff);
+    digitalWrite(ACTIVE_RL, rellayOn);
   }
 
   // Variable Pergerakan
@@ -880,8 +898,15 @@ long xPositionInCM,
   void setup() {
     Wire.beginTransmission(113);
     Master.begin(115200);
+
+    #ifdef printToPC
+    Serial.begin(115200);
+    #endif
+
+    #ifdef loadMaster
     Serial.begin(128000);
     Serial.println("CLEARDATA");
+    #endif
 
     #ifdef loadFuzzy
       Serial.println("LABEL,CLOCK,DeltaError,Error,Output Fuzzy Right PWM,Output Fuzzy Left PWM");
@@ -912,6 +937,7 @@ long xPositionInCM,
     pinMode(CH6, INPUT);
     //Buzzer();
     Buzzer();
+    relaySteady();
     uvActivationReset();
   }
 
@@ -943,7 +969,8 @@ long xPositionInCM,
   // Open The Command if want to upload on Slave
   #include <Arduino.h>
   #include <Wire.h>
-  #include <kinematics_RS.h> 
+  #include <kinematics_RS.h>
+
   // Slave to Master
   #define Slave Serial3
 
@@ -954,7 +981,6 @@ long xPositionInCM,
   #define LeftMarker 6
   #define TrackPresent A2
   #define AnalogOut A0
-
   // Encoder
   // enum {ENC_STOP, ENC_CLOCKWISE_ROTATION, ENC_COUNTERCLOCKWISE_ROTATION};
   // const byte SINPin = 4;
@@ -964,57 +990,36 @@ long xPositionInCM,
   // volatile byte encoder_state = ENC_STOP;
   // volatile int encoder_position = 0; 
   // volatile int encoder_oldpos = 0;
-
   // volatile byte R_encoder_state = ENC_STOP;
   // volatile int R_encoder_position = 0; 
   // volatile int R_encoder_oldpos = 0;
-
   unsigned long startTimeMillis,
                 endTimeMillis,
                 loopTimer;
 
   #define phi 3.14285714286
   #define rangeBetweenWheels 34.5
+  // #define wheelRadius 7.45 //6" to cm
   #define wheelRadius 15 //6" to cm
   #define encoderPPR 600
   #define encoderCPR (4 * encoderPPR)
   #define wheelCircumference ((wheelRadius * phi) / encoderPPR)
   #define xEncoder 2.108012
-
   #define encoderLeftA 2
   #define encoderLeftB 4
-
-  #define encoderRightA 3
-  #define encoderRightB 5
-
-  //kinematicAUMR_RS kinematics(encoderLeftA, encoderLeftB, encoderRightA, encoderRightB, wheelRadius, rangeBetweenWheels, encoderPPR);
-
+  #define encoderRightA 5
+  #define encoderRightB 3
+  kinematicAUMR_RS kinematics(encoderLeftA, encoderLeftB, encoderRightA, encoderRightB, wheelRadius, rangeBetweenWheels, encoderPPR);
   long xPositionInCM,
         yPositionInCM,
         thetaPositionInDegree,
 
         leftLinearSpeed,
         rightLinearSpeed;
-  
+
   float leftPosition,
         rightPosition;
-  
-  float currentStateCLK1,
-        lastStateCLK1,
-        currentStateCLK2,
-        lastStateCLK2;
 
-  float counter1 = 0,
-        counter2 = 0;
-  
-  float yRight,
-        yLeft,
-        
-        yRightTick,
-        yLeftTick,
-
-        avgEncoder;
-  
   int leftCounter,
       rightCounter;
 
@@ -1023,76 +1028,60 @@ long xPositionInCM,
     endTimeMillis = millis();
     loopTimer = (endTimeMillis - startTimeMillis);
     startTimeMillis = millis();
-
     Serial.print(loopTimer);
     Serial.print(" \t");
   }
-
   void ForkRightDetect(){
     digitalWrite(ForkRight, HIGH);
     digitalWrite(ForkRight, LOW);
   }
-
   void ForkLeftDetect(){
     digitalWrite(ForkLeft, HIGH);
     digitalWrite(ForkLeft, LOW);
   }
-
   int trackDetect(){
     int TrackPresentValue = digitalRead(TrackPresent);
-    // Serial.print(" TP: ");
-    // Serial.print(TrackPresentValue);
-
+    Serial.print(" TP: ");
+    Serial.print(TrackPresentValue);
     return TrackPresentValue;
   }
-
   int AnalogOutDetect(){
     int AnalogOutValue = analogRead(AnalogOut);
-    // Serial.print(" AO: ");
-    // Serial.print(AnalogOutValue);
+    Serial.print(" AO: ");
+    Serial.print(AnalogOutValue);
     
     return AnalogOutValue;
   }
-
   int RightMarkerDetect() {
     int RightMarkerValue = digitalRead(RightMarker);
-    // Serial.print(" RM: ");
-    // Serial.print(RightMarkerValue);
-
+    Serial.print(" RM: ");
+    Serial.print(RightMarkerValue);
     return RightMarkerValue;
   }
-
   int LeftMarkerDetect(){
     int LeftMarkerValue = digitalRead(LeftMarker);
-    // Serial.print(" LM: ");
-    // Serial.print(LeftMarkerValue);
-
+    Serial.print(" LM: ");
+    Serial.print(LeftMarkerValue);
   return LeftMarkerValue;
   }
-
   void sendData(){
     int delaySending = 9;
-
     Slave.print("!");
     delay(delaySending);
     Slave.print(trackDetect());
     delay(delaySending);
-
     Slave.print("@");
     delay(delaySending);
     Slave.print(AnalogOutDetect());
     delay(delaySending);
-
     Slave.print("&");
     delay(delaySending);
     Slave.print((long)xPositionInCM);
     delay(delaySending);
-
     Slave.print("=");
     delay(delaySending);
     Slave.print((long)yPositionInCM);
     delay(delaySending);
-
     Slave.print(")");
     delay(delaySending);
     Slave.print((long)thetaPositionInDegree);
@@ -1107,18 +1096,28 @@ long xPositionInCM,
     // delay(delaySending);
     // Slave.print(LeftMarkerDetect());
     // delay(delaySending);  
-
     // Slave.print("%");
     // delay(delaySending);
     // Slave.print((int)leftLinearSpeed);
     // delay(delaySending);
-
     // Slave.print("^");
     // delay(delaySending);
     // Slave.print((int)rightLinearSpeed);
     // delay(delaySending);
+    
+  // Encoder
+    // Slave.print("%");
+    // Slave.print(R_encoder_position);
+    // Slave.print("^");
+    // Slave.print(encoder_position);
   }
-
+  // void kinematicToMaster()
+  // {
+  //   // Delay to adjust speed of the master microcontroller
+    
+  //   // Print to master
+    
+  // }
   void getKinematicData(){
     Serial.print("xPostCM: ");
     Serial.print((long)xPositionInCM);
@@ -1131,123 +1130,106 @@ long xPositionInCM,
     Serial.print(" RghtLnrSpd: ");
     Serial.println(rightLinearSpeed);
   }
-
-  
-
-  // void processLeftForward()
-  // {
-  //   kinematics.processLeftForward();
-  // }
-
-  // void processLeftBackward()
-  // {
-  //   kinematics.processLeftBackward();
-  // }
-
-  // void processRightForward()
-  // {
-  //   kinematics.processRightForward();
-  // }
-
-  // void processRightBackward()
-  // {
-  //   kinematics.processRightBackward();
-  // }
-
-  void updateEncoderLeft(){  
-    currentStateCLK1 = digitalRead(encoderLeftA);  
-    if (currentStateCLK1 != lastStateCLK1  && currentStateCLK1 == 1){
-      if (digitalRead(encoderLeftB) != currentStateCLK1) {
-        counter1 ++;
-      } else {
-        counter1 --;
-      }
-    }
-  lastStateCLK1 = currentStateCLK1;
+  void processLeftForward()
+  {
+    kinematics.processLeftForward();
   }
-
-  void updateEncoderRight(){
-    currentStateCLK2 = digitalRead(encoderRightA);
-    if (currentStateCLK2 != lastStateCLK2  && currentStateCLK2 == 1){
-      if (digitalRead(encoderRightB) != currentStateCLK2) {
-        counter2 --;
-      } else {
-        counter2 ++;
-      }
-    }
-  lastStateCLK2 = currentStateCLK2;
+  void processLeftBackward()
+  {
+    kinematics.processLeftBackward();
   }
-
-  void encoderMode(){
-    yRight = counter2;
-    yLeft = counter1;
-
-    yRightTick = (yRight/(6*xEncoder));
-    yLeftTick = (yLeft/(6*xEncoder));
-    avgEncoder = ((yRightTick+yLeftTick)/2);
+  void processRightForward()
+  {
+    kinematics.processRightForward();
   }
-
-  void loadEncoderData(){
-    Serial.print("DATA,TIME,");
-    Serial.print(counter1);
-    Serial.print(", ");
-    Serial.print(counter2);
-    Serial.print(", ");
-    Serial.print(yLeftTick);
-    Serial.print(", ");
-    Serial.print(yRightTick);
-    Serial.print(", ");
-    Serial.println(avgEncoder);
+  void processRightBackward()
+  {
+    kinematics.processRightBackward();
   }
-
+  // void encoder_isr() {
+    
+  //   if  (digitalRead(SINPin) == LOW) {
+  //     // clockwise rotation
+  //     encoder_state=ENC_CLOCKWISE_ROTATION;
+  //     encoder_position++;
+  //   } else {
+  //     //counter-clockwise rotation
+  //     encoder_state=ENC_COUNTERCLOCKWISE_ROTATION;
+  //     encoder_position--;    
+  //   } 
+  // }
+  // void R_encoder_isr() {
+    
+  //   if  (digitalRead(R_SINPin) == HIGH) {
+  //     // clockwise rotation
+  //     R_encoder_state=ENC_CLOCKWISE_ROTATION;
+  //     R_encoder_position++;
+  //   } else {
+  //     //counter-clockwise rotation
+  //     R_encoder_state=ENC_COUNTERCLOCKWISE_ROTATION;
+  //     R_encoder_position--;    
+  //   } 
+  // }
+  // void encoder(){
+  //   if (encoder_oldpos == encoder_position) encoder_state= ENC_STOP;
+  //   // output encoder incremental and status
+  //   Serial.print("Left Encoder position: ");
+  //   Serial.print(encoder_position);
+  //   //Serial.print(",Left Encoder state: ");
+    
+  //   encoder_oldpos = encoder_position;
+  //   if (R_encoder_oldpos == R_encoder_position) R_encoder_state= ENC_STOP;
+  //   // output encoder incremental and status
+  //   Serial.print(" Right Encoder position: ");
+  //   Serial.println(R_encoder_position);
+  //   //Serial.println(",Right Encoder state: ");
+    
+  //   R_encoder_oldpos = R_encoder_position;
+  // }
   void setup() {
-
     Slave.begin(115200);
-    Serial.begin(128000);
-    Serial.println("CLEARDATA");
-
-    #ifdef loadEncoder
-      Serial.println("LABEL,CLOCK,LeftEncoder,RightEncoder,LeftPositionInCM,RightPositionInCM,AverageValueInCM");
-    #endif
-
+    Serial.begin(115200);
     pinMode(ForkRight, OUTPUT);
     pinMode(ForkLeft, OUTPUT);
     pinMode(RightMarker, INPUT);
     pinMode(LeftMarker, INPUT);
     pinMode(TrackPresent, INPUT);
     pinMode(AnalogOut, INPUT);
-    
+    // pinMode(COSPin, INPUT_PULLUP);
+    // pinMode(SINPin, INPUT);
+    // pinMode(R_COSPin, INPUT_PULLUP);
+    // pinMode(R_SINPin, INPUT);
+    // attachInterrupt(digitalPinToInterrupt(COSPin), encoder_isr, RISING);
+    // attachInterrupt(digitalPinToInterrupt(R_COSPin), R_encoder_isr, RISING);
     pinMode(encoderLeftA, INPUT_PULLUP);
     pinMode(encoderLeftB, INPUT_PULLUP);
     pinMode(encoderRightA, INPUT_PULLUP);
     pinMode(encoderRightB, INPUT_PULLUP);
-
-    attachInterrupt(digitalPinToInterrupt(encoderLeftA), updateEncoderLeft, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderRightA), updateEncoderRight, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderLeftA), processLeftForward, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderLeftB), processLeftBackward, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderRightA), processRightForward, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderRightB), processRightBackward, CHANGE);
   }
-
   void loop() {
     //encoder()
-    // checkLoopTimer();
+    checkLoopTimer();
+    kinematics.calculate();
+    yPositionInCM = kinematics.getYPositionInCM();
+    xPositionInCM = kinematics.getXPositionInCM();
+    thetaPositionInDegree = kinematics.getThetaInDegree();
+    leftLinearSpeed = kinematics.getLeftSpeed();
+    rightLinearSpeed = kinematics.getRightSpeed();
+    rightPosition = kinematics.getRightPositionInCM();
+    leftPosition = kinematics.getLeftPositionInCM();
 
-    // kinematics.calculate();
-    // yPositionInCM = kinematics.getYPositionInCM();
-    // xPositionInCM = kinematics.getXPositionInCM();
-    // thetaPositionInDegree = kinematics.getThetaInDegree();
-    // leftLinearSpeed = kinematics.getLeftSpeed();
-    // rightLinearSpeed = kinematics.getRightSpeed();
-    // rightPosition = kinematics.getRightPositionInCM();
-    // leftPosition = kinematics.getLeftPositionInCM();
-    // // rightCounter = kinematics.getEncoderRight();
-    // // leftCounter = kinematics.getEncoderLeft();
-    
-    #ifdef loadEncoder
-      encoderMode();
-      loadEncoderData();
-    #endif
+    Serial.print(" rightPost: "); 
+    Serial.print(rightPosition);
+    Serial.print(" leftPost: ");
+    Serial.print(leftPosition);
+
 
     //print kinematics data
-    // getKinematicData();
+    getKinematicData();
 
     //send Magnetic data to master
     sendData();
