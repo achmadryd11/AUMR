@@ -1,0 +1,12 @@
+tambahkan penjelasan pada komunikasi Serial, spek komponen
+tambhkan remote dengan garis putus-putus
+ke arah recivier
+
+penjelasan diagram blok
+mikro input output
+
+cek error dan akurasi 
+
+tambahkan pengertian pada setiap naik dan turun pada grafik analog output
+
+Dibuat lebih general 

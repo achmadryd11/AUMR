@@ -1,0 +1,62 @@
+Percobaan 1
+Lampu On : 02.401
+UV Meter membaca : 03.411
+hasil : 1.01
+
+Percobaan 2
+Lampu On : 01.151
+UV Meter membaca : 01.401
+hasil : 0.25
+Nilai terbaca 45
+
+Percobaan 3
+Lampu On : 03.927
+UV Meter membaca : 04.651
+hasil : 0.724
+Nilai Terbaca 51
+
+Percobaan 4
+Lampu On : 0.9
+UV Meter membaca : 01.650
+hasil : 0.750
+Nilai Terbaca 45
+
+Percobaan 5
+Lampu On : 0.401
+UV Meter membaca : 01.650
+hasil : 0.75
+Nilai Terbaca 56
+
+Percobaan 6
+Lampu On : 0.901
+UV Meter membaca : 01.651
+hasil : 0.75
+Nilai Terbaca 58
+
+Percobaan 7
+Lampu On : 0.401
+UV Meter membaca : 01.2
+hasil : 0.799
+Nilai Terbaca 56
+
+Percobaan 8
+Lampu On : 1.651
+UV Meter membaca : 02.651
+hasil : 1
+Nilai Terbaca 44
+
+Percobaan 9
+Lampu On : 0.901
+UV Meter membaca : 02.150
+hasil : 1.249
+Nilai Terbaca 59 
+
+Percobaan 10
+Lampu On : 02.151
+UV Meter membaca : 03.400
+hasil : 1.249
+Nilai Terbaca 45
+
+
+
+

@@ -1146,46 +1146,7 @@ long xPositionInCM,
   {
     kinematics.processRightBackward();
   }
-  // void encoder_isr() {
-    
-  //   if  (digitalRead(SINPin) == LOW) {
-  //     // clockwise rotation
-  //     encoder_state=ENC_CLOCKWISE_ROTATION;
-  //     encoder_position++;
-  //   } else {
-  //     //counter-clockwise rotation
-  //     encoder_state=ENC_COUNTERCLOCKWISE_ROTATION;
-  //     encoder_position--;    
-  //   } 
-  // }
-  // void R_encoder_isr() {
-    
-  //   if  (digitalRead(R_SINPin) == HIGH) {
-  //     // clockwise rotation
-  //     R_encoder_state=ENC_CLOCKWISE_ROTATION;
-  //     R_encoder_position++;
-  //   } else {
-  //     //counter-clockwise rotation
-  //     R_encoder_state=ENC_COUNTERCLOCKWISE_ROTATION;
-  //     R_encoder_position--;    
-  //   } 
-  // }
-  // void encoder(){
-  //   if (encoder_oldpos == encoder_position) encoder_state= ENC_STOP;
-  //   // output encoder incremental and status
-  //   Serial.print("Left Encoder position: ");
-  //   Serial.print(encoder_position);
-  //   //Serial.print(",Left Encoder state: ");
-    
-  //   encoder_oldpos = encoder_position;
-  //   if (R_encoder_oldpos == R_encoder_position) R_encoder_state= ENC_STOP;
-  //   // output encoder incremental and status
-  //   Serial.print(" Right Encoder position: ");
-  //   Serial.println(R_encoder_position);
-  //   //Serial.println(",Right Encoder state: ");
-    
-  //   R_encoder_oldpos = R_encoder_position;
-  // }
+ 
   void setup() {
     Slave.begin(115200);
     Serial.begin(115200);
